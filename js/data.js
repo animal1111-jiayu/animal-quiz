@@ -14,13 +14,10 @@ AQ.CONFIG = {
   totalTypes: 16
 };
 
-/* 内置密码：每个可用 3 次。可自行增删。 */
-AQ.PASSWORDS = [
-  'K7QM2X', 'R9XP4T', 'W3WD8N', 'H8HN5C', 'L2LC7V',
-  'F9VZ3G', 'G6GY9S', 'J4KS2D', 'N7RD6M', 'B8MT4Q',
-  'C3QF7L', 'P9LN5K', 'T2PB8R', 'Z3JK6W', 'V7VC4Y',
-  'X2ZS9H', 'Y5TY3F', 'Q8NR6B', 'D4HG9M', 'E9FW5K'
-];
+/* 内置密码列表只存在于本地预览文件 js/passwords.local.js，
+ * 打包上线时会被自动排除（线上校验走 Supabase，不需要它）。
+ * 这里保留一个空数组作为兜底，避免未加载时报错。 */
+AQ.PASSWORDS = AQ.PASSWORDS || [];
 
 /* ---------------- 四个维度 ----------------
  * ext      社交能量：外倾 / 内倾
