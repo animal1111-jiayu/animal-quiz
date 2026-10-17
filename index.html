@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#FBF7F2">
+<title>测测你最像什么动物？</title>
+<meta name="description" content="32 道题，测出你最像的 10 种动物原型之一，并附一个真正有出处的心理学解释。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%238E3B2E'/%3E%3Ccircle cx='24' cy='26' r='6' fill='%23FBF7F2'/%3E%3Ccircle cx='40' cy='26' r='6' fill='%23FBF7F2'/%3E%3Cellipse cx='32' cy='42' rx='12' ry='9' fill='%23FBF7F2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ 密码 ============ -->
+  <section class="screen" id="screen-lock">
+    <div class="lock-bg" aria-hidden="true">
+      <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span>
+      <span class="grain"></span>
+    </div>
+
+    <div class="lock-inner">
+      <div class="cfg-warn" id="cfg-warn" hidden>
+        后端还没配置：当前密码校验只在本机有效。请先在 <code>js/config.js</code> 填入 Supabase 地址和 anon key。
+      </div>
+      <div class="lock-main">
+        <div class="brand-line">
+          <span class="brand-dot"></span>
+          <span>动物天赋图鉴</span>
+        </div>
+
+        <h1 class="lock-title">
+          测测你<br>
+          <em>最像什么动物？</em>
+        </h1>
+
+        <p class="lock-sub">32 道题 · 5 分钟 · 16 种动物原型</p>
+        <p class="lock-desc">不是星座，不是性格标签。<br>是你在这个世界上的活法。</p>
+
+        <form class="lock-form" id="lock-form" autocomplete="off">
+          <div class="field">
+            <input id="pwd" type="text" name="pwd" inputmode="text" maxlength="12"
+                   placeholder="请输入测评密码" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            <button type="submit" class="btn btn-primary btn-enter">进入测评</button>
+          </div>
+          <p class="lock-err" id="lock-err" role="alert"></p>
+        </form>
+
+        <p class="lock-hint">每个密码可测 3 次 · 兑换后请自行保存密码</p>
+
+        <div id="resume-slot"></div>
+      </div>
+
+      <div class="lock-foot">
+        <span>© 动物天赋图鉴</span>
+        <span class="dot">·</span>
+        <span>仅供娱乐参考</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 开始前 ============ -->
+  <section class="screen" id="screen-intro">
+    <div class="intro-inner">
+      <div class="brand-line center">
+        <span class="brand-dot"></span>
+        <span>动物天赋图鉴</span>
+      </div>
+
+      <h2 class="intro-title">开始之前</h2>
+
+      <ul class="intro-list">
+        <li>
+          <span class="idx">01</span>
+          <div><b>凭第一反应选</b><p>别想太久，第一反应最准。</p></div>
+        </li>
+        <li>
+          <span class="idx">02</span>
+          <div><b>没有标准答案</b><p>选“最像你”的那个，不是“最好的”那个。</p></div>
+        </li>
+        <li>
+          <span class="idx">03</span>
+          <div><b>答完有惊喜</b><p>你会拿到一张能保存的天赋图鉴。</p></div>
+        </li>
+      </ul>
+
+      <p class="intro-left">这个密码还剩 <b id="left-count">3</b> 次机会</p>
+
+      <button class="btn btn-primary btn-block" id="btn-start">开始测评</button>
+      <p class="intro-note">中途可以返回上一题修改</p>
+    </div>
+  </section>
+
+  <!-- ============ 答题 ============ -->
+  <section class="screen" id="screen-quiz">
+    <header class="quiz-head">
+      <button class="icon-btn" id="btn-quit" aria-label="退出测评">✕</button>
+      <div class="progress"><i id="progress-bar"></i></div>
+      <div class="quiz-count"><b id="q-index">1</b><span>/32</span></div>
+    </header>
+
+    <div class="quiz-body" id="quiz-body"></div>
+
+    <footer class="quiz-foot">
+      <button class="btn btn-ghost" id="btn-back">上一题</button>
+    </footer>
+  </section>
+
+  <!-- ============ 结算动效 ============ -->
+  <section class="screen" id="screen-loading">
+    <div class="loading-inner">
+      <div class="paw-loader"><span></span><span></span><span></span></div>
+      <p>正在辨认你的动物原型…</p>
+    </div>
+  </section>
+
+  <!-- ============ 结果 ============ -->
+  <section class="screen" id="screen-result">
+    <div id="result-body"></div>
+  </section>
+
+</div>
+
+<!-- 底部操作栏（仅结果页显示） -->
+<div class="action-bar" id="action-bar">
+  <button class="act" id="btn-save">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
+    <span>保存长图</span>
+  </button>
+  <button class="act" id="btn-share">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>
+    <span>复制链接</span>
+  </button>
+  <button class="act" id="btn-retest">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    <span>再测一次</span>
+  </button>
+  <button class="act" id="btn-review">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18"/><path d="M12 8v12"/><path d="M12 8a3 3 0 1 0-3-3c0 2 1.5 3 3 3Z"/><path d="M12 8a3 3 0 1 1 3-3c0 2-1.5 3-3 3Z"/></svg>
+    <span>好评有礼</span>
+  </button>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/poster.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
