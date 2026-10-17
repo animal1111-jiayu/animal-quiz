@@ -51,12 +51,15 @@ var AQ = AQ || {};
   }
 
   /* ---------- 云端 ---------- */
-  function rpc(name, body) {
+  function rpc(name, body, attempt) {
+    attempt = attempt || 1;
+    var started = Date.now();
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
 
     return fetch(url + '/rest/v1/rpc/' + name, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         'apikey': key,
         'Authorization': 'Bearer ' + key,
@@ -71,18 +74,27 @@ var AQ = AQ || {};
         try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = null; }
 
         if (!res.ok) {
-          console.warn('[AQ] RPC ' + name + ' HTTP ' + res.status, data);
+          console.warn('[AQ] RPC ' + name + ' HTTP ' + res.status + ' (' + (Date.now() - started) + 'ms)', data);
           if (res.status === 404) return { ok: false, reason: 'no_function' };
           if (res.status === 401 || res.status === 403) return { ok: false, reason: 'auth' };
           return { ok: false, reason: 'network' };
         }
-        if (!data || typeof data !== 'object') return { ok: false, reason: 'network' };
+        if (!data || typeof data !== 'object') {
+          console.warn('[AQ] RPC ' + name + ' 返回内容异常', txt && txt.slice(0, 200));
+          return { ok: false, reason: 'network' };
+        }
         return data;
       });
     }).catch(function (e) {
       if (timer) clearTimeout(timer);
-      console.warn('[AQ] RPC ' + name + ' 失败', e);
-      return { ok: false, reason: 'network' };
+      var ms = Date.now() - started;
+      console.warn('[AQ] RPC ' + name + ' 第 ' + attempt + ' 次失败（' + ms + 'ms）', e && e.name, e && e.message);
+
+      if (attempt < 2) {
+        return new Promise(function (r) { setTimeout(r, 600); })
+          .then(function () { return rpc(name, body, attempt + 1); });
+      }
+      return { ok: false, reason: (e && e.name === 'AbortError') ? 'timeout' : 'network' };
     });
   }
 

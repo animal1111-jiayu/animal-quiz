@@ -47,7 +47,8 @@ var AQ = AQ || {};
     if (reason === 'disabled') return '这个密码已停用，请联系客服';
     if (reason === 'no_function') return '数据库还没初始化，请先在 Supabase 运行 schema.sql';
     if (reason === 'auth') return '连接密钥不对，请检查 js/config.js';
-    return '网络不太好，请稍后再试';
+    if (reason === 'timeout') return '连接有点慢，请切换 Wi-Fi / 4G 后重试';
+    return '连不上服务器，请切换 Wi-Fi / 4G 后重试';
   }
 
   var toastTimer = null;
@@ -229,13 +230,18 @@ var AQ = AQ || {};
     state.busy = true;
     err.textContent = '';
     if (btn) { btn.disabled = true; btn.textContent = '验证中…'; }
+    var t0 = Date.now();
 
     AQ.API.peek(p).then(function (res) {
       state.busy = false;
       if (btn) { btn.disabled = false; btn.textContent = '进入测评'; }
 
       if (!res || !res.ok) {
-        err.textContent = reasonText(res && res.reason);
+        var msg = reasonText(res && res.reason);
+        if (/[?&]diag=1/.test(location.search)) {
+          msg += '〔' + (res && res.reason) + ' / ' + (Date.now() - t0) + 'ms〕';
+        }
+        err.textContent = msg;
         input.classList.add('shake');
         setTimeout(function () { input.classList.remove('shake'); }, 420);
         return;
