@@ -39,6 +39,55 @@
     } catch (e) { return iso; }
   }
 
+  /* ---------------- 网络：超时 + 重试 ---------------- */
+  function fetchT(url, opts, ms) {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms || 20000) : null;
+    var o = {};
+    for (var k in (opts || {})) o[k] = opts[k];
+    if (ctrl) o.signal = ctrl.signal;
+
+    return fetch(url, o).then(function (r) {
+      if (timer) clearTimeout(timer);
+      return r;
+    }, function (e) {
+      if (timer) clearTimeout(timer);
+      throw e;
+    });
+  }
+
+  function isNetErr(e) {
+    if (!e) return false;
+    if (e.name === 'AbortError') return true;
+    return /failed to fetch|networkerror|load failed|network request failed|timeout/i.test(e.message || '');
+  }
+
+  function withRetry(fn, left) {
+    if (left == null) left = 1;
+    return fn().catch(function (e) {
+      if (isNetErr(e) && left > 0) {
+        return new Promise(function (r) { setTimeout(r, 700); })
+          .then(function () { return withRetry(fn, left - 1); });
+      }
+      if (isNetErr(e)) {
+        throw new Error(e && e.name === 'AbortError'
+          ? '连接超时，请切换网络后重试'
+          : '连不上服务器，请切换网络后重试');
+      }
+      throw e;
+    });
+  }
+
+  var warmed = false;
+  function warm() {
+    if (warmed || !BASE) return;
+    warmed = true;
+    try {
+      fetchT(BASE + '/auth/v1/health', { headers: { 'apikey': KEY } }, 15000)
+        .catch(function () {});
+    } catch (e) {}
+  }
+
   /* ---------------- 会话 ---------------- */
   function loadSession() {
     try { session = JSON.parse(sessionStorage.getItem(SS) || 'null'); } catch (e) { session = null; }
@@ -93,7 +142,7 @@
       if (opts.headers) {
         for (var k in opts.headers) headers[k] = opts.headers[k];
       }
-      return fetch(BASE + path, {
+      return fetchT(BASE + path, {
         method: opts.method || 'GET',
         headers: headers,
         body: opts.body
@@ -136,10 +185,12 @@
 
   /* ---------------- 登录 / 退出 ---------------- */
   function login(email, pwd) {
-    return fetch(BASE + '/auth/v1/token?grant_type=password', {
-      method: 'POST',
-      headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pwd })
+    return withRetry(function () {
+      return fetchT(BASE + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pwd })
+      }, 15000);
     }).then(function (r) {
       return r.text().then(function (txt) {
         var d = null;
@@ -180,11 +231,13 @@
   }
 
   function loadAll() {
-    return Promise.all([
-      rpc('admin_stats', {}),
-      select('quiz_passwords', 'select=code,used_count,max_uses,active,created_at&order=created_at.desc&limit=1000'),
-      select('quiz_sessions', 'select=code,created_at,user_agent&order=created_at.desc&limit=200')
-    ]).then(function (res) {
+    return withRetry(function () {
+      return Promise.all([
+        rpc('admin_stats', {}),
+        select('quiz_passwords', 'select=code,used_count,max_uses,active,created_at&order=created_at.desc&limit=1000'),
+        select('quiz_sessions', 'select=code,created_at,user_agent&order=created_at.desc&limit=200')
+      ]);
+    }).then(function (res) {
       renderStats(res[0] || {});
       codes = res[1] || [];
       sessions = res[2] || [];
@@ -428,6 +481,7 @@
   function init() {
     bind();
     loadSession();
+    warm();
     if (!session) { logout(); return; }
 
     if (tokenAlive()) {
