@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>后台 · 动物天赋图鉴</title>
+<link rel="preconnect" href="https://lcbibckyzlvgwclunspn.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://lcbibckyzlvgwclunspn.supabase.co">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231D2530'/%3E%3Crect x='18' y='18' width='12' height='12' rx='3' fill='%23F4F6F8'/%3E%3Crect x='34' y='18' width='12' height='12' rx='3' fill='%23F4F6F8'/%3E%3Crect x='18' y='34' width='28' height='12' rx='3' fill='%23F4F6F8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- 登录 -->
+<div class="login" id="login">
+  <div class="login-card">
+    <h1>动物天赋图鉴 · 后台</h1>
+    <p class="sub">用管理员账号登录，查看访问数据与密码管理</p>
+    <form id="login-form" autocomplete="on">
+      <input id="email" type="email" placeholder="管理员邮箱" autocomplete="username" required>
+      <input id="password" type="password" placeholder="密码" autocomplete="current-password" required>
+      <button class="btn" type="submit" id="login-btn">登录</button>
+      <p class="err" id="login-err"></p>
+    </form>
+  </div>
+</div>
+
+<!-- 后台 -->
+<div class="app" id="app" hidden>
+  <header class="top">
+    <div class="brand">动物天赋图鉴 · 后台</div>
+    <div class="who">
+      <span id="who"></span>
+      <button class="link" id="logout">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="cards" id="cards"></section>
+
+    <section class="panel">
+      <h2>最近 7 天</h2>
+      <div class="chart" id="chart"></div>
+      <div class="legend">
+        <span><i class="dot visit"></i>页面访问</span>
+        <span><i class="dot session"></i>开始测评</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>批量生成密码</h2>
+      <div class="gen">
+        <label>数量<input id="gen-count" type="number" value="10" min="1" max="200"></label>
+        <label>每个可用次数<input id="gen-uses" type="number" value="3" min="1" max="99"></label>
+        <label>前缀（可空）<input id="gen-prefix" type="text" maxlength="4" placeholder="如 AQ"></label>
+        <button class="btn" id="gen-btn">生成</button>
+      </div>
+      <div class="gen-out" id="gen-out" hidden>
+        <div class="gen-head">
+          <span id="gen-info"></span>
+          <button class="link" id="gen-copy">复制全部</button>
+        </div>
+        <textarea id="gen-codes" readonly rows="7"></textarea>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="codes">密码列表</button>
+        <button class="tab" data-tab="sessions">使用记录</button>
+      </div>
+
+      <div id="tab-codes">
+        <div class="filter">
+          <input id="code-search" type="search" placeholder="搜索密码…">
+          <select id="code-filter">
+            <option value="all">全部</option>
+            <option value="active">可用</option>
+            <option value="used">已用完</option>
+            <option value="off">已停用</option>
+          </select>
+          <button class="link" id="export">导出 CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>密码</th><th>已用 / 上限</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="codes-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-sessions" hidden>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>时间</th><th>使用的密码</th><th>设备</th></tr>
+            </thead>
+            <tbody id="sessions-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

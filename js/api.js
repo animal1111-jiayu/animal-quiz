@@ -118,11 +118,62 @@ var AQ = AQ || {};
         p_code: c,
         p_ua: (navigator.userAgent || '').slice(0, 280)
       });
+    },
+
+    /* 记录一次访问（同一设备 30 分钟内去重） */
+    visit: function () {
+      if (!remote) return;
+      var vid = '';
+      try { vid = localStorage.getItem('aq_vid') || ''; } catch (e) {}
+      if (!vid || vid.length < 6) {
+        vid = 'v' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        try { localStorage.setItem('aq_vid', vid); } catch (e) {}
+      }
+      try {
+        fetch(url + '/rest/v1/rpc/log_visit', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'apikey': key,
+            'Authorization': 'Bearer ' + key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ p_visitor: vid, p_ua: (navigator.userAgent || '').slice(0, 200) })
+        }).catch(function () {});
+      } catch (e) {}
     }
   };
 
   if (!remote) {
     console.warn('[AQ] 未配置 Supabase，正在使用浏览器本地校验（不要这样上线）');
   }
+
+  /* ---------- 连接预热 ----------
+   * 页面打开时先打一次不计数的请求，把 DNS + TLS 建好，
+   * 用户输密码的这几秒正好用上，正式请求就不用再等握手。
+   */
+  var lastWarm = 0;
+
+  function warm() {
+    if (!remote) return;
+    var now = Date.now();
+    if (now - lastWarm < 3000) return;
+    lastWarm = now;
+    try {
+      fetch(url + '/rest/v1/rpc/peek_password', {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+          'apikey': key,
+          'Authorization': 'Bearer ' + key,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_code: '__warmup__' })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  AQ.API.warm = warm;
+  if (remote) setTimeout(warm, 50);
 
 })();

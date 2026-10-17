@@ -792,6 +792,13 @@ var AQ = AQ || {};
   function bind() {
     $('#lock-form').addEventListener('submit', submitPassword);
 
+    var pwdInput = $('#pwd');
+    if (pwdInput) {
+      pwdInput.addEventListener('focus', function () {
+        if (AQ.API && AQ.API.warm) AQ.API.warm();
+      });
+    }
+
     $('#btn-start').addEventListener('click', startTest);
 
     $('#quiz-body').addEventListener('click', function (e) {
@@ -849,6 +856,7 @@ var AQ = AQ || {};
       var w = $('#cfg-warn');
       if (w) w.hidden = false;
     }
+    if (AQ.API && AQ.API.visit) AQ.API.visit();
     if (!initResultFromHash()) {
       renderLock();
     }
