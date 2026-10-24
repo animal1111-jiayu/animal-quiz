@@ -248,12 +248,16 @@
 
   /* ---------------- 看板 ---------------- */
   function renderStats(s) {
-    var left = (s.uses_capacity || 0) - (s.uses_used || 0);
+    var cap = s.uses_capacity || 0;
+    var used = s.uses_used || 0;
+    var unlimited = cap >= 100000;
     var cards = [
       { k: '今日访问', v: s.visits_today || 0, s: '独立访客 ' + (s.visitors_today || 0) },
       { k: '今日测评', v: s.sessions_today || 0, s: '累计访问 ' + (s.visits_total || 0) },
       { k: '累计测评', v: s.sessions_total || 0, s: '密码 ' + (s.codes_active || 0) + ' / ' + (s.codes_total || 0) + ' 个可用' },
-      { k: '剩余可用次数', v: left, s: '已用 ' + (s.uses_used || 0) + ' / 共 ' + (s.uses_capacity || 0) }
+      unlimited
+        ? { k: '测评总次数', v: used, s: '当前为统一密码，不限制次数' }
+        : { k: '剩余可用次数', v: cap - used, s: '已用 ' + used + ' / 共 ' + cap }
     ];
     $('#cards').innerHTML = cards.map(function (c) {
       return '<div class="card"><div class="k">' + esc(c.k) + '</div>' +
@@ -306,7 +310,7 @@
       var st = codeState(c);
       return '<tr data-code="' + esc(c.code) + '">' +
         '<td class="code">' + esc(c.code) + '</td>' +
-        '<td>' + c.used_count + ' / ' + c.max_uses + '</td>' +
+        '<td>' + (c.max_uses >= 100000 ? (c.used_count + ' / 不限') : (c.used_count + ' / ' + c.max_uses)) + '</td>' +
         '<td><span class="tag ' + st.cls + '">' + st.txt + '</span></td>' +
         '<td>' + esc(fmt(c.created_at)) + '</td>' +
         '<td><div class="ops">' +

@@ -43,7 +43,7 @@ var AQ = AQ || {};
 
   function reasonText(reason) {
     if (reason === 'not_found') return '密码不对，请检查后重试';
-    if (reason === 'exhausted') return '这个密码的 ' + AQ.CONFIG.usesPerPassword + ' 次机会已经用完了';
+    if (reason === 'exhausted') return '这个密码暂时用不了，请联系店主';
     if (reason === 'disabled') return '这个密码已停用，请联系客服';
     if (reason === 'no_function') return '数据库还没初始化，请先在 Supabase 运行 schema.sql';
     if (reason === 'auth') return '连接密钥不对，请检查 js/config.js';
@@ -253,7 +253,8 @@ var AQ = AQ || {};
       state.index = 0;
       state.result = null;
 
-      $('#left-count').textContent = res.remaining;
+      var lc = $('#left-count');
+      if (lc) lc.textContent = res.remaining;
       show('screen-intro');
     });
   }
@@ -642,9 +643,8 @@ var AQ = AQ || {};
 
   function showExhausted() {
     openModal(
-      '<h3 class="modal-title">这个密码的次数用完了</h3>' +
-      '<p class="modal-text">每个密码可以测 ' + AQ.CONFIG.usesPerPassword +
-      ' 次，这个密码已经用完了。<br>换一个新密码就能继续测。</p>' +
+      '<h3 class="modal-title">这个密码暂时用不了</h3>' +
+      '<p class="modal-text">请联系店主获取最新的访问密码。</p>' +
       '<button class="btn btn-primary modal-ok" id="btn-need-pwd">去输入新密码</button>'
     );
     setTimeout(function () {
@@ -690,8 +690,7 @@ var AQ = AQ || {};
 
       var m = openModal(
         '<h3 class="modal-title">再测一次？</h3>' +
-        '<p class="modal-text">这会消耗 1 次机会，这个密码还剩 <b>' + res.remaining + '</b> 次。<br>' +
-        '答案重新来过，结果可能会不一样。</p>' +
+        '<p class="modal-text">答案会清空，重新开始一轮。<br>结果可能和这次不一样。</p>' +
         '<div class="modal-btns">' +
           '<button class="btn btn-ghost" id="btn-cancel">再想想</button>' +
           '<button class="btn btn-primary" id="btn-again">开始重测</button>' +
@@ -812,7 +811,7 @@ var AQ = AQ || {};
     $('#btn-quit').addEventListener('click', function () {
       var m = openModal(
         '<h3 class="modal-title">要退出吗？</h3>' +
-        '<p class="modal-text">这次机会已经用掉了，退出后不会返还。<br>进度会保留，下次可以继续。</p>' +
+        '<p class="modal-text">进度会保留，下次打开可以接着答。</p>' +
         '<div class="modal-btns">' +
           '<button class="btn btn-ghost" id="btn-stay">继续答</button>' +
           '<button class="btn btn-primary" id="btn-leave">退出</button>' +
